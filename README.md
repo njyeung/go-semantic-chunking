@@ -114,8 +114,8 @@ This server uses the [gte-large-en-v1.5](https://huggingface.co/Alibaba-NLP/gte-
 
 Requirements:
 - Go 1.21+
-- ONNX Runtime 1.23.2 (GPU or CPU version)
-- CUDA 12.4+ (for GPU support)
+- ONNX Runtime (GPU or CPU version)
+- CUDA (for GPU support)
 
 ```bash
 # Install dependencies
@@ -275,6 +275,8 @@ If varying token lengths is acceptable and strong semantic integrity within chun
   "chunk_penalty": 1.0
 }
 ```
+
+Ultimately, the best way to find optimal parameters is to test on documents from your specific use case and visually validate the output.
 
 ## License
 
