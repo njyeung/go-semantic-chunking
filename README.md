@@ -32,9 +32,7 @@ docker run -d --gpus all -p 8080:8080 \
   semantic-chunking-server
 ```
 
-The Dockerfile also contains useful information if you're planning on using a local setup, such as:
-- Setting up an ONNX runtime library
-- Downloading an embedding model and tokenizer
+> The Dockerfile also contains useful information if you're planning on using a local setup, such as setting up an ONNX runtime library and downloading an embedding model and tokenizer
 
 ## API Usage
 
