@@ -1,6 +1,6 @@
 # Go Semantic Chunking
 
-A semantic chunking server written (mostly) in Go.
+A semantic chunking algorithm written (mostly) in Go, with a quickly deployable server.
 
 ## Quick Start
 
