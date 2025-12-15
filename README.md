@@ -38,7 +38,7 @@ docker run -d --gpus all -p 8080:8080 \
 
 #### Request Format
 
-```bash
+```
 curl -X POST http://localhost:8080/embed \
   -H "Content-Type: application/json" \
   -d '{
@@ -63,7 +63,7 @@ curl -X POST http://localhost:8080/embed \
 
 #### Response Format
 
-```json
+```
 {
   "documents": [
     {
@@ -78,6 +78,10 @@ curl -X POST http://localhost:8080/embed \
         }
       ],
       "error": ""
+    },
+    {
+      "id": "doc2",
+      "chunks": [...]
     }
   ]
 }
