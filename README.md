@@ -155,7 +155,7 @@ Raw text is first segmented into sentences using standard delimiters (`.`, `?`, 
 
 Given a sequence of embedded sentences:
 ```
-s₀, s₁, s₂, ..., s_{n-1}
+s0, s1, s2, ..., s{n-1}
 ```
 
 The goal is to partition them into contiguous chunks such that:
@@ -164,14 +164,14 @@ The goal is to partition them into contiguous chunks such that:
 - No chunk exceeds `max_size`
 - Excessive fragmentation is discouraged (`chunk_penalty`)
 
-We solve this segmentation problem via **dynamic programming**.
+We solve this segmentation problem via dynamic programming.
 
 #### Sentence Similarity Precomputation
 
 1. Each sentence is embedded exactly once using the ONNX model
 2. For each adjacent pair `(sᵢ, sᵢ₊₁)`, we compute cosine similarity:
    ```
-   sim[i] = cos(embed(sᵢ), embed(sᵢ₊₁))
+   sim[i] = cos(embed(s_i), embed(s_{i+1}))
    ```
 3. All similarities are **min-max normalized** to `[0, 1]` to ensure:
    - Rewards are always non-negative
@@ -231,7 +231,7 @@ The `sizePenalty` is a hinge-like function parameterized by:
 
 **Formula**:
 ```go
-if tokenCount <= optimal_size:
+if tokenCount <= optimal_size:.
     penalty = 0
 else if tokenCount > max_size:
     penalty = ∞ (illegal chunk)
@@ -254,27 +254,17 @@ Each chunk aggregates:
 
 Finally, each chunk is embedded one final time to produce the chunk-level embedding returned in the response.
 
+---
+
 #### Tuning Parameters for Your Use Case
 
-**For longer, coherent chunks** (e.g., summarization):
-```json
-{
-  "optimal_size": 800,
-  "max_size": 1000,
-  "lambda_size": 10.0,
-  "chunk_penalty": 2.0
-}
-```
+Small/No `chunk_penalty` encourages isolated chunks, phrases such as "Alright" and "Okay". This may be useful if you add a processing step afterwards to weed chunks smaller than 30 tokens.   
 
-**For shorter, precise chunks** (e.g., question answering):
-```json
-{
-  "optimal_size": 200,
-  "max_size": 300,
-  "lambda_size": 3.0,
-  "chunk_penalty": 0.5
-}
-```
+For longer, coherent chunks, a large `optimal_size` and `max_size` may be desireable.
+
+For evenly distrbuted chunks of about the same token length, a large `chunk_penalty` would be helpful.
+
+If varying token lengths is acceptable and strong semantic integrity within chunks is a priority, then having `max_size` >> `optimal_size` and a light `lambda_size` allows for chunks to grow against the penalty as long as the sentences within them are very similar.
 
 **For balanced RAG** (default):
 ```json
