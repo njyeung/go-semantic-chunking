@@ -6,62 +6,6 @@ import (
 	tokenizer "github.com/sugarme/tokenizer"
 )
 
-// ParseSRT parses SRT transcript text and returns array of Frames.
-func ParseSRT(transcriptText string) []Frame {
-	//	1									sequence number
-	//	00:00:00,000 --> 00:00:01,830		start --> end
-	//	I'm happy to						line
-	//	have you here today.				line
-	//
-	//	2
-	//	00:00:01,910 --> 00:00:03,610
-	//	As I'm sure you're all
-	//	aware, there's going
-
-	if transcriptText == "" {
-		return []Frame{}
-	}
-
-	lines := strings.Split(transcriptText, "\n")
-	var frames []Frame
-	var currentStartTime string
-	var currentEndTime string
-
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-
-		// Skip empty lines
-		if line == "" {
-			continue
-		}
-
-		// Skip sequence numbers
-		if isDigitOnly(line) {
-			continue
-		}
-
-		// timestamp line (start --> end)
-		// HH:MM:SS,mmm --> HH:MM:SS,mmm
-		if strings.Contains(line, "-->") {
-			parts := strings.Split(line, "-->")
-			if len(parts) == 2 {
-				currentStartTime = strings.TrimSpace(parts[0])
-				currentEndTime = strings.TrimSpace(parts[1])
-			}
-			continue
-		}
-
-		// Create frame
-		frames = append(frames, Frame{
-			Text:      line,
-			StartTime: currentStartTime,
-			EndTime:   currentEndTime,
-		})
-	}
-
-	return frames
-}
-
 // ExtractSentencesFromFrames merges frames into sentences based on sentence boundaries
 // A sentence is text ending with . or ? or !
 func (em *EmbeddingModel) ExtractSentencesFromFrames(frames []Frame) []*Sentence {
