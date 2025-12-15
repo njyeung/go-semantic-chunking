@@ -106,7 +106,7 @@ This server uses the [gte-large-en-v1.5](https://huggingface.co/Alibaba-NLP/gte-
 
 #### Bring Your Own Embedding Model
 1. Replace the `wget` commands in the Dockerfile with your model URL
-2. Ensure your model has the same input/output format (input_ids, attention_mask, token_type_ids → last_hidden_state)
+2. Ensure your model has the same input/output format (input_ids, attention_mask, token_type_ids and last_hidden_state)
 
 ## Development
 
