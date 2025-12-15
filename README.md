@@ -4,7 +4,7 @@ A semantic chunking server written (mostly) in Go.
 
 ## Quick Start
 
-### Using Docker (Recommended)
+#### Using Docker (Recommended)
 
 ```bash
 docker build -t semantic-chunking-server .
@@ -16,7 +16,7 @@ docker run -d --name semantic-server --gpus all -p 8080:8080 semantic-chunking-s
 docker run -d --name semantic-server -p 8080:8080 semantic-chunking-server
 ```
 
-### Configuration
+#### Configuration
 
 All configuration is done via environment variables. See the `Dockerfile` for detailed documentation on available options including:
 - Server timeouts
@@ -61,7 +61,7 @@ curl -X POST http://localhost:8080/embed \
   }'
 ```
 
-### Response Format
+#### Response Format
 
 ```json
 {
@@ -98,13 +98,13 @@ Each document can specify custom chunking parameters:
 
 This server uses the [gte-large-en-v1.5](https://huggingface.co/Alibaba-NLP/gte-large-en-v1.5) model from Alibaba-NLP. The model and tokenizer are automatically downloaded during the Docker build.
 
-### Bring Your Own Embedding Model
+#### Bring Your Own Embedding Model
 1. Replace the `wget` commands in the Dockerfile with your model URL
 2. Ensure your model has the same input/output format (input_ids, attention_mask, token_type_ids → last_hidden_state)
 
 ## Development
 
-### Local Setup (without Docker)
+#### Local Setup (without Docker)
 
 Requirements:
 - Go 1.21+
@@ -132,20 +132,20 @@ go run .
 
 This section provides a detailed explanation of the semantic chunking algorithm for readers interested in understanding how the chunking parameters affect output.
 
-### Overview
+#### Overview
 
 The semantic chunking algorithm converts raw text into ~500 token chunks optimized for retrieval augmented generation (RAG). The algorithm balances three competing objectives:
 1. **Semantic coherence**: Keep similar sentences together
 2. **Chunk size**: Stay close to optimal token count
 3. **Minimal fragmentation**: Avoid creating too many tiny chunks
 
-### Preprocessing
+#### Preprocessing
 
 Raw text is first segmented into sentences using standard delimiters (`.`, `?`, `!`).
 
 **Token Limit Enforcement**: To ensure compatibility with downstream models, we enforce a hard maximum token limit (`max_size`) on all segments. In rare cases where a single sentence exceeds `max_size`, we greedily split it into consecutive chunks, with the final chunk containing remaining tokens. These chunks may end mid-sentence, but this is acceptable for RAG applications. After this step, all sentences satisfy `TokenCount ≤ max_size`.
 
-### Problem Formulation
+#### Problem Formulation
 
 Given a sequence of embedded sentences:
 ```
@@ -160,7 +160,7 @@ The goal is to partition them into contiguous chunks such that:
 
 We solve this segmentation problem via **dynamic programming**.
 
-### Sentence Similarity Precomputation
+#### Sentence Similarity Precomputation
 
 1. Each sentence is embedded exactly once using the ONNX model
 2. For each adjacent pair `(sᵢ, sᵢ₊₁)`, we compute cosine similarity:
@@ -172,7 +172,7 @@ We solve this segmentation problem via **dynamic programming**.
    - There's always reward for merging sentences
    - Higher similarity always increases merge desirability
 
-### Optimization for O(1) Scoring
+#### Optimization for O(1) Scoring
 
 To enable efficient DP transitions, we precompute two prefix arrays:
 
@@ -194,7 +194,7 @@ This allows computing total tokens in segment `[i, j)` in O(1):
 segment_tokens(i, j) = prefix_tokens[j] - prefix_tokens[i]
 ```
 
-### Dynamic Programming Algorithm
+#### Dynamic Programming Algorithm
 
 **DP Definition**:
 ```
@@ -216,7 +216,7 @@ Where:
 
 **Reconstruction**: A `start[]` array tracks the optimal starting index for each position, allowing backtracking from `dp[n]` to `dp[0]` to reconstruct the optimal chunking.
 
-### Size Penalty Function
+#### Size Penalty Function
 
 The `sizePenalty` is a hinge-like function parameterized by:
 - **`optimal_size`**: No penalty below this threshold
@@ -236,7 +236,7 @@ else:
 
 This encourages chunks near `optimal_size` while allowing flexibility when semantic coherence warrants larger chunks.
 
-### Reconstruction
+#### Reconstruction
 
 Once `dp[n]` is computed, we reconstruct the optimal segmentation by backtracking through `start[]` from `n` to `0`. Chunks are built in reverse order, then reversed to restore the original sequence.
 
@@ -248,7 +248,7 @@ Each chunk aggregates:
 
 Finally, each chunk is embedded one final time to produce the chunk-level embedding returned in the response.
 
-### Tuning Parameters for Your Use Case
+#### Tuning Parameters for Your Use Case
 
 **For longer, coherent chunks** (e.g., summarization):
 ```json
@@ -283,4 +283,3 @@ Finally, each chunk is embedded one final time to produce the chunk-level embedd
 ## License
 
 See LICENSE file for details.
-# go_semantic_chunking
