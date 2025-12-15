@@ -88,7 +88,7 @@ func DefaultChunkingConfig() ChunkingConfig {
 	return ChunkingConfig{
 		OptimalSize:  470,
 		MaxSize:      512,
-		LambdaSize:   5.0,
+		LambdaSize:   2.0,
 		ChunkPenalty: 1.0,
 	}
 }

@@ -55,8 +55,8 @@ curl -X POST http://localhost:8080/embed \
         "chunking_config": {
           "optimal_size": 300,
           "max_size": 400,
-          "lambda_size": 5.0,
-          "chunk_penalty": 1.0
+          "lambda_size": 1.5,
+          "chunk_penalty": 2.0
         }
       }
     ]
@@ -271,7 +271,7 @@ If varying token lengths is acceptable and strong semantic integrity within chun
 {
   "optimal_size": 470,
   "max_size": 512,
-  "lambda_size": 5.0,
+  "lambda_size": 2.0,
   "chunk_penalty": 1.0
 }
 ```
