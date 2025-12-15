@@ -7,17 +7,13 @@ A semantic chunking server written (mostly) in Go.
 ### Using Docker (Recommended)
 
 ```bash
-# Build the container
 docker build -t semantic-chunking-server .
 
 # Run with GPU support
 docker run -d --name semantic-server --gpus all -p 8080:8080 semantic-chunking-server
 
-# Run without GPU (CPU only)
+# or run CPU only
 docker run -d --name semantic-server -p 8080:8080 semantic-chunking-server
-
-# Check if it's running
-curl http://localhost:8080/health
 ```
 
 ### Configuration
@@ -98,7 +94,7 @@ Each document can specify custom chunking parameters:
 - **lambda_size** (default: 5.0): Maximum penalty at max_size
 - **chunk_penalty** (default: 1.0): Per-chunk penalty to discourage over-splitting
 
-> More information on these parameters below
+> More information on how parameters affect chunking below
 
 ## Embedding Model
 
@@ -130,13 +126,6 @@ export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 
 # Run the server
 go run .
-```
-
-## Health Check
-
-```bash
-curl http://localhost:8080/health
-# Returns: OK
 ```
 
 ---
