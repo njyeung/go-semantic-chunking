@@ -275,7 +275,3 @@ If varying token lengths is acceptable and strong semantic integrity within chun
 ```
 
 Ultimately, the best way to find optimal parameters is to test on documents from your specific use case and visually validate the output.
-
-## License
-
-See LICENSE file for details.
