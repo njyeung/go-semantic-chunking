@@ -1,4 +1,4 @@
-module go-semantic-chunking
+module github.com/njyeung/go-semantic-chunking
 
 go 1.25.4
 
