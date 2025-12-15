@@ -36,6 +36,8 @@ docker run -d --gpus all -p 8080:8080 \
 
 ## API Usage
 
+The API supports batch processing by default. Each document is a string of text that is processed independently. Documents are processed sequentially and have no effect on one another.
+
 #### Request Format
 
 ```
