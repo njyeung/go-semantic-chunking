@@ -165,11 +165,8 @@ func processDocument(embeddingModel *EmbeddingModel, doc *EmbedRequest) Document
 func processText(embeddingModel *EmbeddingModel, text string, chunkingConfig ChunkingConfig) ([]*Chunk, error) {
 	log.Printf("Processing text (%d characters)", len(text))
 
-	// Create a single "frame" from the input text
-	frames := []Frame{{Text: text, StartTime: "", EndTime: ""}}
-
 	// Extract sentences from the text
-	sentences := embeddingModel.ExtractSentencesFromFrames(frames)
+	sentences := embeddingModel.ExtractSentencesFromText(text)
 	log.Printf("Extracted %d sentences", len(sentences))
 
 	if len(sentences) == 0 {
@@ -181,7 +178,7 @@ func processText(embeddingModel *EmbeddingModel, text string, chunkingConfig Chu
 		return nil, fmt.Errorf("failed to embed sentences: %w", err)
 	}
 	log.Printf("Embedded %d sentences", len(sentences))
-
+	
 	// Perform semantic chunking with provided config
 	chunks, err := chunkingConfig.ExtractChunksFromSentences(sentences)
 	if err != nil {

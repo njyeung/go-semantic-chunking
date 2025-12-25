@@ -54,9 +54,14 @@ WORKDIR /app
                     # AND TOKENIZER
                     # here, we are using gte-large-en-v1.5
 
+# Download the ONNX model
 RUN wget -q https://huggingface.co/Alibaba-NLP/gte-large-en-v1.5/resolve/main/onnx/model.onnx
-RUN wget -q https://huggingface.co/Alibaba-NLP/gte-large-en-v1.5/resolve/main/tokenizer.json
 
+# Download vocab.txt (required by tokenizer)
+RUN wget -q https://huggingface.co/Alibaba-NLP/gte-large-en-v1.5/resolve/main/vocab.txt
+
+# Copy the modified tokenizer from the repo
+COPY tokenizer.json ./
 
 COPY go.mod go.sum ./
 RUN go mod download

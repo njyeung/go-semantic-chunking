@@ -102,11 +102,12 @@ Each document can specify custom chunking parameters:
 
 ## Embedding Model
 
-This server uses the [gte-large-en-v1.5](https://huggingface.co/Alibaba-NLP/gte-large-en-v1.5) model from Alibaba-NLP. The model and tokenizer are automatically downloaded during the Docker build.
+This server uses the [gte-large-en-v1.5](https://huggingface.co/Alibaba-NLP/gte-large-en-v1.5) model from Alibaba-NLP. The ONNX model and vocab.txt are automatically downloaded during the Docker build, while a custom tokenizer.json is included in the repository.
 
 #### Bring Your Own Embedding Model
-1. Replace the `wget` commands in the Dockerfile with your model URL
+1. Replace the model download commands in the Dockerfile with your model URL
 2. Ensure your model has the same input/output format (input_ids, attention_mask, token_type_ids and last_hidden_state)
+3. Provide compatible tokenizer files (tokenizer.json and vocab.txt)
 
 ## Local Setup (without Docker)
 
@@ -119,9 +120,10 @@ Requirements:
 # Install dependencies
 go mod download
 
-# Download model and tokenizer
+# Download model and vocab
 wget https://huggingface.co/Alibaba-NLP/gte-large-en-v1.5/resolve/main/onnx/model.onnx
-wget https://huggingface.co/Alibaba-NLP/gte-large-en-v1.5/resolve/main/tokenizer.json
+wget https://huggingface.co/Alibaba-NLP/gte-large-en-v1.5/resolve/main/vocab.txt
+# Note: tokenizer.json is included in the repository
 
 # Set ONNX Runtime library path
 export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH

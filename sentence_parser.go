@@ -6,56 +6,47 @@ import (
 	tokenizer "github.com/sugarme/tokenizer"
 )
 
-// ExtractSentencesFromFrames merges frames into sentences based on sentence boundaries
+// ExtractSentencesFromText splits text into sentences based on sentence boundaries
 // A sentence is text ending with . or ? or !
-func (em *EmbeddingModel) ExtractSentencesFromFrames(frames []Frame) []*Sentence {
-	if len(frames) == 0 {
+func (em *EmbeddingModel) ExtractSentencesFromText(text string) []*Sentence {
+	if text == "" {
 		return []*Sentence{}
 	}
 
-	// Merge all frame text together, keeping track of where each starts
 	var sentences []*Sentence
+	var currentSentence strings.Builder
 
-	var currentSentenceText strings.Builder
-	var currentStartTime string
-	var isFirstFrame = true
+	// Split text into words and punctuation
+	words := strings.Fields(text)
 
-	for _, frame := range frames {
-		// Set start time for first frame of this sentence
-		if isFirstFrame {
-			currentStartTime = frame.StartTime
-			isFirstFrame = false
+	for _, word := range words {
+		if currentSentence.Len() > 0 {
+			currentSentence.WriteString(" ")
 		}
+		currentSentence.WriteString(word)
 
-		// Add frame text
-		if currentSentenceText.Len() > 0 {
-			currentSentenceText.WriteString(" ")
-		}
-		currentSentenceText.WriteString(frame.Text)
-
-		// Check if this frame ends with . or ? or !
-		trimmed := strings.TrimSpace(frame.Text)
+		// Check if this word ends with . or ? or !
+		trimmed := strings.TrimSpace(word)
 		if strings.HasSuffix(trimmed, ".") || strings.HasSuffix(trimmed, "!") || strings.HasSuffix(trimmed, "?") {
-			sentenceText := currentSentenceText.String()
+			sentenceText := currentSentence.String()
 
 			sentences = append(sentences, &Sentence{
 				Text:       sentenceText,
-				StartTime:  currentStartTime,
+				StartTime:  "", // Not applicable for text input
 				Embedding:  nil, // Will be populated by embedding function
 				TokenCount: CountTokens(em.Tokenizer, sentenceText),
 			})
 
-			currentSentenceText.Reset()
-			isFirstFrame = true
+			currentSentence.Reset()
 		}
 	}
 
 	// Add any remaining text as a sentence
-	if currentSentenceText.Len() > 0 {
-		sentenceText := currentSentenceText.String()
+	if currentSentence.Len() > 0 {
+		sentenceText := currentSentence.String()
 		sentences = append(sentences, &Sentence{
 			Text:       sentenceText,
-			StartTime:  currentStartTime,
+			StartTime:  "",
 			Embedding:  nil,
 			TokenCount: CountTokens(em.Tokenizer, sentenceText),
 		})
@@ -124,14 +115,4 @@ func CountTokens(tok *tokenizer.Tokenizer, text string) int {
 	}
 
 	return len(encoding.GetIds())
-}
-
-// checks if a string contains only digits
-func isDigitOnly(s string) bool {
-	for _, r := range s {
-		if r < '0' || r > '9' {
-			return false
-		}
-	}
-	return len(s) > 0
 }

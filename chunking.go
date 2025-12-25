@@ -73,7 +73,7 @@ func (cfg ChunkingConfig) ExtractChunksFromSentences(sentences []*Sentence) ([]*
 	// Sanity check: every sentence must fit within MaxSize
 	for idx, s := range sentences {
 		if s.TokenCount > cfg.MaxSize {
-			return nil, fmt.Errorf("sentence %d has TokenCount=%d > MaxSize=%d; cannot chunk (issue with ExtractSentencesFromFrames)", idx, s.TokenCount, cfg.MaxSize)
+			return nil, fmt.Errorf("sentence %d has TokenCount=%d > MaxSize=%d; cannot chunk (issue with ExtractSentencesFromText)", idx, s.TokenCount, cfg.MaxSize)
 		}
 	}
 
@@ -102,6 +102,7 @@ func (cfg ChunkingConfig) ExtractChunksFromSentences(sentences []*Sentence) ([]*
 			maxSim = v
 		}
 	}
+
 	// Normalize to [0, 1]
 	simRange := maxSim - minSim
 	if simRange == 0 {

@@ -1,16 +1,9 @@
 package main
 
-// Frame: a single line from the SRT transcript
-type Frame struct {
-	Text      string
-	StartTime string // HH:MM:SS.mmm format
-	EndTime   string
-}
-
 // Sentence: a single complete sentence
 type Sentence struct {
 	Text       string
-	StartTime  string // From first frame that contributed to this sentence
+	StartTime  string // Optional: can be empty for text-only input
 	Embedding  []float32
 	TokenCount int
 }
