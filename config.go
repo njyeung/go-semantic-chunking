@@ -15,10 +15,10 @@ type ServerConfig struct {
 
 // ChunkingConfig holds all tunable parameters for the semantic chunking algorithm
 type ChunkingConfig struct {
-	OptimalSize  int     // optimal chunk size, no penalty below this (default: 470)
-	MaxSize      int     // chunk size hard limit, infinite penalty at or above (default: 512)
-	LambdaSize   float32 // Max penalty in "edge units" at MaxSize (default: 3.0)
-	ChunkPenalty float32 // Initial penalty per chunk to discourage small chunks (default: 1.0)
+	OptimalSize  int     `json:"optimal_size"`  // optimal chunk size, no penalty below this (default: 470)
+	MaxSize      int     `json:"max_size"`      // chunk size hard limit, infinite penalty at or above (default: 512)
+	LambdaSize   float32 `json:"lambda_size"`   // Max penalty in "edge units" at MaxSize (default: 3.0)
+	ChunkPenalty float32 `json:"chunk_penalty"` // Initial penalty per chunk to discourage small chunks (default: 1.0)
 }
 
 // EmbeddingConfig holds embedding model configuration

@@ -8,7 +8,7 @@ import (
 
 // ExtractSentencesFromText splits text into sentences based on sentence boundaries
 // A sentence is text ending with . or ? or !
-func (em *EmbeddingModel) ExtractSentencesFromText(text string) []*Sentence {
+func (em *EmbeddingModel) ExtractSentencesFromText(text string, maxSize int) []*Sentence {
 	if text == "" {
 		return []*Sentence{}
 	}
@@ -32,7 +32,7 @@ func (em *EmbeddingModel) ExtractSentencesFromText(text string) []*Sentence {
 
 			sentences = append(sentences, &Sentence{
 				Text:       sentenceText,
-				StartTime:  "", // Not applicable for text input
+				StartTime:  "",  // Not applicable for text input
 				Embedding:  nil, // Will be populated by embedding function
 				TokenCount: CountTokens(em.Tokenizer, sentenceText),
 			})
@@ -54,11 +54,10 @@ func (em *EmbeddingModel) ExtractSentencesFromText(text string) []*Sentence {
 
 	// Post-process: split any oversized sentences (>512 tokens) into smaller chunks
 	// This prevents the DP algorithm from failing when individual sentences are too large
-	maxTokens := 512
 	finalSentences := make([]*Sentence, 0, len(sentences))
 
 	for _, sent := range sentences {
-		if sent.TokenCount <= maxTokens {
+		if sent.TokenCount <= maxSize {
 			finalSentences = append(finalSentences, sent)
 			continue
 		}
@@ -83,7 +82,7 @@ func (em *EmbeddingModel) ExtractSentencesFromText(text string) []*Sentence {
 				testText := currentChunk.String() + " " + words[wordCount]
 				tokens := CountTokens(em.Tokenizer, testText)
 
-				if tokens > maxTokens {
+				if tokens > maxSize {
 					break
 				}
 

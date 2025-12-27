@@ -166,7 +166,7 @@ func processText(embeddingModel *EmbeddingModel, text string, chunkingConfig Chu
 	log.Printf("Processing text (%d characters)", len(text))
 
 	// Extract sentences from the text
-	sentences := embeddingModel.ExtractSentencesFromText(text)
+	sentences := embeddingModel.ExtractSentencesFromText(text, chunkingConfig.MaxSize)
 	log.Printf("Extracted %d sentences", len(sentences))
 
 	if len(sentences) == 0 {
@@ -178,7 +178,7 @@ func processText(embeddingModel *EmbeddingModel, text string, chunkingConfig Chu
 		return nil, fmt.Errorf("failed to embed sentences: %w", err)
 	}
 	log.Printf("Embedded %d sentences", len(sentences))
-	
+
 	// Perform semantic chunking with provided config
 	chunks, err := chunkingConfig.ExtractChunksFromSentences(sentences)
 	if err != nil {
