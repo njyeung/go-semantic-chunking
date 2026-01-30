@@ -21,9 +21,10 @@ type ChunkingConfig struct {
 	ChunkPenalty float32 `json:"chunk_penalty"` // Initial penalty per chunk to discourage small chunks (default: 1.0)
 }
 
-// EmbeddingConfig holds embedding model configuration
+// EmbeddingConfig holds Gemini embedding configuration
 type EmbeddingConfig struct {
-	MaxBatchTokens int // Max total tokens per batch (controls GPU memory usage)
+	Model                string // Gemini embedding model name
+	OutputDimensionality int    // Output embedding dimensions (768, 1536, or 3072)
 }
 
 // LoadServerConfig loads server configuration from environment variables
@@ -59,27 +60,26 @@ func LoadServerConfig() ServerConfig {
 // LoadEmbeddingConfig loads embedding configuration from environment variables
 // Falls back to defaults if not set
 func LoadEmbeddingConfig() EmbeddingConfig {
-	maxBatchTokens := 6000 // default
+	config := DefaultEmbeddingConfig()
 
-	if envVal := os.Getenv("MAX_BATCH_TOKENS"); envVal != "" {
+	if envVal := os.Getenv("GEMINI_MODEL"); envVal != "" {
+		config.Model = envVal
+	}
+
+	if envVal := os.Getenv("EMBEDDING_DIMENSIONS"); envVal != "" {
 		if val, err := strconv.Atoi(envVal); err == nil && val > 0 {
-			maxBatchTokens = val
+			config.OutputDimensionality = val
 		}
 	}
 
-	return EmbeddingConfig{
-		MaxBatchTokens: maxBatchTokens,
-	}
+	return config
 }
 
-// DefaultEmbeddingConfig returns sensible defaults for embedding
+// DefaultEmbeddingConfig returns sensible defaults for Gemini embedding
 func DefaultEmbeddingConfig() EmbeddingConfig {
 	return EmbeddingConfig{
-		// 12000 tokens is about:
-		// 240 short sentences (50 tokens each) in one batch
-		// 24 medium chunks (500 tokens each) in one batch
-		// 12 large chunks (1000 tokens each) in one batch
-		MaxBatchTokens: 6000,
+		Model:                "gemini-embedding-001",
+		OutputDimensionality: 768, // Good balance of quality and size
 	}
 }
 

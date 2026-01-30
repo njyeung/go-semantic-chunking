@@ -2,13 +2,11 @@ package main
 
 import (
 	"strings"
-
-	tokenizer "github.com/sugarme/tokenizer"
 )
 
 // ExtractSentencesFromText splits text into sentences based on sentence boundaries
 // A sentence is text ending with . or ? or !
-func (em *EmbeddingModel) ExtractSentencesFromText(text string, maxSize int) []*Sentence {
+func ExtractSentencesFromText(text string, maxSize int) []*Sentence {
 	if text == "" {
 		return []*Sentence{}
 	}
@@ -34,7 +32,7 @@ func (em *EmbeddingModel) ExtractSentencesFromText(text string, maxSize int) []*
 				Text:       sentenceText,
 				StartTime:  "",  // Not applicable for text input
 				Embedding:  nil, // Will be populated by embedding function
-				TokenCount: CountTokens(em.Tokenizer, sentenceText),
+				TokenCount: CountTokens(sentenceText),
 			})
 
 			currentSentence.Reset()
@@ -48,11 +46,11 @@ func (em *EmbeddingModel) ExtractSentencesFromText(text string, maxSize int) []*
 			Text:       sentenceText,
 			StartTime:  "",
 			Embedding:  nil,
-			TokenCount: CountTokens(em.Tokenizer, sentenceText),
+			TokenCount: CountTokens(sentenceText),
 		})
 	}
 
-	// Post-process: split any oversized sentences (>512 tokens) into smaller chunks
+	// Post-process: split any oversized sentences (>maxSize tokens) into smaller chunks
 	// This prevents the DP algorithm from failing when individual sentences are too large
 	finalSentences := make([]*Sentence, 0, len(sentences))
 
@@ -69,7 +67,7 @@ func (em *EmbeddingModel) ExtractSentencesFromText(text string, maxSize int) []*
 			continue
 		}
 
-		// Binary search to find how many words fit in maxTokens
+		// Greedily add words until we hit token limit
 		var currentChunk strings.Builder
 		for len(words) > 0 {
 			// Start with first word
@@ -80,7 +78,7 @@ func (em *EmbeddingModel) ExtractSentencesFromText(text string, maxSize int) []*
 			// Add words until we hit token limit
 			for wordCount < len(words) {
 				testText := currentChunk.String() + " " + words[wordCount]
-				tokens := CountTokens(em.Tokenizer, testText)
+				tokens := CountTokens(testText)
 
 				if tokens > maxSize {
 					break
@@ -97,7 +95,7 @@ func (em *EmbeddingModel) ExtractSentencesFromText(text string, maxSize int) []*
 				Text:       chunkText,
 				StartTime:  sent.StartTime,
 				Embedding:  nil,
-				TokenCount: CountTokens(em.Tokenizer, chunkText),
+				TokenCount: CountTokens(chunkText),
 			})
 
 			words = words[wordCount:]
@@ -105,13 +103,4 @@ func (em *EmbeddingModel) ExtractSentencesFromText(text string, maxSize int) []*
 	}
 
 	return finalSentences
-}
-
-func CountTokens(tok *tokenizer.Tokenizer, text string) int {
-	encoding, err := tok.EncodeSingle(text)
-	if err != nil {
-		return 0
-	}
-
-	return len(encoding.GetIds())
 }

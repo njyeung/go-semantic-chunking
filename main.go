@@ -50,7 +50,7 @@ func main() {
 	embeddingConfig := LoadEmbeddingConfig()
 
 	fmt.Printf("Server config: Port=%s, ReadTimeout=%v, WriteTimeout=%v\n", serverConfig.Port, serverConfig.ReadTimeout, serverConfig.WriteTimeout)
-	fmt.Printf("Embedding config: MaxBatchTokens=%d\n", embeddingConfig.MaxBatchTokens)
+	fmt.Printf("Embedding config: Model=%s, Dimensions=%d\n", embeddingConfig.Model, embeddingConfig.OutputDimensionality)
 
 	// Load embedding model
 	fmt.Println("Loading embedding model...")
@@ -166,7 +166,7 @@ func processText(embeddingModel *EmbeddingModel, text string, chunkingConfig Chu
 	log.Printf("Processing text (%d characters)", len(text))
 
 	// Extract sentences from the text
-	sentences := embeddingModel.ExtractSentencesFromText(text, chunkingConfig.MaxSize)
+	sentences := ExtractSentencesFromText(text, chunkingConfig.MaxSize)
 	log.Printf("Extracted %d sentences", len(sentences))
 
 	if len(sentences) == 0 {
