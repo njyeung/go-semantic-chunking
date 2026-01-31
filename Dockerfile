@@ -1,7 +1,7 @@
 # Cloud Embeddings Version
 # Uses Gemini API instead of local GPU inference
 
-FROM golang:1.21-alpine
+FROM golang:1.23-alpine
 
 RUN apk add --no-cache ca-certificates
 
@@ -25,9 +25,6 @@ ENV WRITE_TIMEOUT_SECONDS=120
 # GEMINI_API_KEY must be set at runtime
 ENV GEMINI_MODEL=gemini-embedding-001
 ENV EMBEDDING_DIMENSIONS=1024
-
-# PUT YOUR GEMINI KEY HERE
-ENV GEMINI_API_KEY=
 
 # Change server port
 ENV PORT=8080

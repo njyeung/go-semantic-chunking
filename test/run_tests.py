@@ -15,7 +15,8 @@ import sys
 import time
 
 # Server endpoint
-URL = "http://localhost:8080/embed"
+URL = os.environ.get("CHUNKING_URL", "http://localhost:8080") + "/embed"
+API_KEY = os.environ.get("API_KEY", "")
 
 # Colors for output
 GREEN = '\033[92m'
@@ -70,17 +71,21 @@ def print_stats(chunks, doc_id):
 def wait_for_server(max_retries=30, delay=2):
     """Wait for server to be ready."""
     print_info("Waiting for server to be ready...")
+    base_url = os.environ.get("CHUNKING_URL", "http://localhost:8080")
+    health_url = f"{base_url}/health"
     for i in range(max_retries):
         try:
-            response = requests.get("http://localhost:8080", timeout=1)
-            print_success("Server is ready!")
-            return True
+            response = requests.get(health_url, timeout=5)
+            if response.status_code == 200:
+                print_success("Server is ready!")
+                return True
         except requests.exceptions.RequestException:
-            if i < max_retries - 1:
-                time.sleep(delay)
-            else:
-                print_error(f"Server did not become ready after {max_retries * delay} seconds")
-                return False
+            pass
+        if i < max_retries - 1:
+            time.sleep(delay)
+        else:
+            print_error(f"Server did not become ready after {max_retries * delay} seconds")
+            return False
     return False
 
 def run_test_1():
@@ -109,7 +114,10 @@ def run_test_1():
     print_info("Using default config (optimal_size: 470, max_size: 512)")
 
     try:
-        response = requests.post(URL, json=payload, timeout=60)
+        headers = {"Content-Type": "application/json"}
+        if API_KEY:
+            headers["X-API-Key"] = API_KEY
+        response = requests.post(URL, json=payload, headers=headers, timeout=60)
         response.raise_for_status()
         result = response.json()
 
@@ -160,7 +168,10 @@ def run_test_2():
     print_info("This should create many small chunks")
 
     try:
-        response = requests.post(URL, json=payload, timeout=120)
+        headers = {"Content-Type": "application/json"}
+        if API_KEY:
+            headers["X-API-Key"] = API_KEY
+        response = requests.post(URL, json=payload, headers=headers, timeout=120)
         response.raise_for_status()
         result = response.json()
 
@@ -223,7 +234,10 @@ def run_test_3():
     print_info("  -> This should create medium-sized chunks")
 
     try:
-        response = requests.post(URL, json=payload, timeout=180)
+        headers = {"Content-Type": "application/json"}
+        if API_KEY:
+            headers["X-API-Key"] = API_KEY
+        response = requests.post(URL, json=payload, headers=headers, timeout=180)
         response.raise_for_status()
         result = response.json()
 

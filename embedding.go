@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	"google.golang.org/genai"
@@ -19,8 +20,16 @@ type EmbeddingModel struct {
 func InitEmbeddingModel(config EmbeddingConfig) (*EmbeddingModel, error) {
 	ctx := context.Background()
 
-	// Client uses GEMINI_API_KEY environment variable automatically
-	client, err := genai.NewClient(ctx, nil)
+	// Get API key from environment
+	apiKey := os.Getenv("GEMINI_API_KEY")
+	if apiKey == "" {
+		return nil, fmt.Errorf("GEMINI_API_KEY environment variable is required")
+	}
+
+	client, err := genai.NewClient(ctx, &genai.ClientConfig{
+		APIKey:  apiKey,
+		Backend: genai.BackendGeminiAPI,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Gemini client: %w", err)
 	}

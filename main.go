@@ -49,11 +49,18 @@ func main() {
 	serverConfig := LoadServerConfig()
 	embeddingConfig := LoadEmbeddingConfig()
 
+	// Load API key for authentication
+	apiKey := os.Getenv("API_KEY")
+	if apiKey == "" {
+		fmt.Println("Warning: API_KEY not set - endpoint is unprotected!")
+	} else {
+		fmt.Println("API key authentication enabled")
+	}
+
 	fmt.Printf("Server config: Port=%s, ReadTimeout=%v, WriteTimeout=%v\n", serverConfig.Port, serverConfig.ReadTimeout, serverConfig.WriteTimeout)
 	fmt.Printf("Embedding config: Model=%s, Dimensions=%d\n", embeddingConfig.Model, embeddingConfig.OutputDimensionality)
 
 	// Load embedding model
-	fmt.Println("Loading embedding model...")
 	embeddingModel, err := InitEmbeddingModel(embeddingConfig)
 	if err != nil {
 		log.Fatalf("Failed to load embedding model: %v", err)
@@ -64,7 +71,22 @@ func main() {
 	// Create and start HTTP server
 	mux := http.NewServeMux()
 	mux.HandleFunc("/embed", func(w http.ResponseWriter, r *http.Request) {
+		// Check API key if configured
+		if apiKey != "" {
+			providedKey := r.Header.Get("X-API-Key")
+			if providedKey == "" {
+				providedKey = r.URL.Query().Get("api_key")
+			}
+			if providedKey != apiKey {
+				http.Error(w, "Unauthorized: invalid or missing API key", http.StatusUnauthorized)
+				return
+			}
+		}
 		handleEmbed(w, r, embeddingModel)
+	})
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ok"))
 	})
 	server := &http.Server{
 		Addr:         ":" + serverConfig.Port,

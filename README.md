@@ -1,48 +1,66 @@
-# Go Semantic Chunking
+# Go Semantic Chunking (Cloud Edition)
 
-A semantic chunking algorithm written (mostly) in Go, with a quickly deployable server.
+A semantic chunking server written in Go, using **Gemini cloud embeddings** for fast, GPU-free deployment.
+
+> This branch uses the Gemini API for embeddings. For the local GPU version using ONNX Runtime, see the `main` branch.
 
 ## Quick Start
 
-#### Using Docker (Recommended)
+#### Using Docker
 
 ```bash
 docker build -t semantic-chunking-server .
 
-# Run with GPU support
-docker run -d --name semantic-server --gpus all -p 8080:8080 semantic-chunking-server
-
-# or run CPU only
-docker run -d --name semantic-server -p 8080:8080 semantic-chunking-server
-```
-
-#### Configuration
-
-All configuration is done via environment variables. See the `Dockerfile` for detailed documentation on available options including:
-- Server timeouts
-- Batch token limits
-- Port configuration
-
-Override defaults when running:
-```bash
-docker run -d --gpus all -p 8080:8080 \
-  -e MAX_BATCH_TOKENS=12000 \
-  -e READ_TIMEOUT_SECONDS=180 \
-  -e WRITE_TIMEOUT_SECONDS=180 \
+docker run -d --name semantic-server -p 8080:8080 \
+  -e GEMINI_API_KEY=your-gemini-api-key \
+  -e API_KEY=your-secret-api-key \
   semantic-chunking-server
 ```
 
-> The Dockerfile also contains useful information for local setup, such as installing an ONNX runtime library and downloading an embedding model
+#### Deploy to Google Cloud Run
+
+```bash
+# Enable required APIs (first time only)
+gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com
+
+# Deploy
+gcloud run deploy semantic-chunking \
+  --source . \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --set-env-vars GEMINI_API_KEY=your-gemini-key,API_KEY=your-secret-api-key
+```
+
+## Configuration
+
+All configuration is done via environment variables:
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `GEMINI_API_KEY` | Yes | - | Your Gemini API key ([get one here](https://ai.google.dev/gemini-api/docs/api-key)) |
+| `API_KEY` | No | - | Secret key to protect your endpoint |
+| `GEMINI_MODEL` | No | `gemini-embedding-001` | Gemini embedding model to use |
+| `EMBEDDING_DIMENSIONS` | No | `768` | Output embedding dimensions (768, 1536, or 3072) |
+| `PORT` | No | `8080` | Server port |
+| `READ_TIMEOUT_SECONDS` | No | `120` | HTTP read timeout |
+| `WRITE_TIMEOUT_SECONDS` | No | `120` | HTTP write timeout |
 
 ## API Usage
 
-The API supports batch processing by default. Each document is a string of text that is processed independently. Documents are processed sequentially and have no effect on one another.
+### Authentication
 
-#### Request Format
+If `API_KEY` is set, all requests to `/embed` must include the key via:
+- **Header**: `X-API-Key: your-secret-key`
+- **Query param**: `?api_key=your-secret-key`
 
-```
+The `/health` endpoint remains unauthenticated for health checks.
+
+### Request Format
+
+```bash
 curl -X POST http://localhost:8080/embed \
   -H "Content-Type: application/json" \
+  -H "X-API-Key: your-secret-api-key" \
   -d '{
     "documents": [
       {
@@ -63,9 +81,9 @@ curl -X POST http://localhost:8080/embed \
   }'
 ```
 
-#### Response Format
+### Response Format
 
-```
+```json
 {
   "documents": [
     {
@@ -89,123 +107,81 @@ curl -X POST http://localhost:8080/embed \
 }
 ```
 
+### Health Check
+
+```bash
+curl http://localhost:8080/health
+# Returns: ok
+```
+
 ## Chunking Configuration
 
 Each document can specify custom chunking parameters:
 
-- **optimal_size** (default: 470): Target chunk size in tokens, no penalty below this
-- **max_size** (default: 512): Hard limit on chunk size in tokens
-- **lambda_size** (default: 5.0): Maximum penalty at max_size
-- **chunk_penalty** (default: 1.0): Per-chunk penalty to discourage over-splitting
-
-> More information on how parameters affect chunking below
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `optimal_size` | 470 | Target chunk size in tokens, no penalty below this |
+| `max_size` | 512 | Hard limit on chunk size in tokens |
+| `lambda_size` | 2.0 | Maximum penalty at max_size |
+| `chunk_penalty` | 1.0 | Per-chunk penalty to discourage over-splitting |
 
 ## Embedding Model
 
-This server uses the [gte-large-en-v1.5](https://huggingface.co/Alibaba-NLP/gte-large-en-v1.5) model from Alibaba-NLP. The ONNX model and vocab.txt are automatically downloaded during the Docker build, while a custom tokenizer.json is included in the repository.
+This server uses [Gemini's embedding API](https://ai.google.dev/gemini-api/docs/embeddings) with the `gemini-embedding-001` model.
 
-#### Bring Your Own Embedding Model
-1. Replace the model download commands in the Dockerfile with your model URL
-2. Ensure your model has the same input/output format (input_ids, attention_mask, token_type_ids and last_hidden_state)
-3. Provide compatible tokenizer files (tokenizer.json and vocab.txt)
+**Key features:**
+- 768, 1536, or 3072 dimensional embeddings
+- Optimized for semantic similarity tasks
+- No GPU required - runs anywhere
 
-## Local Setup (without Docker)
-
-Requirements:
-- Go 1.21+
-- ONNX Runtime (GPU or CPU version)
-- CUDA (for GPU support)
+## Local Development
 
 ```bash
 # Install dependencies
 go mod download
 
-# Download model and vocab
-wget https://huggingface.co/Alibaba-NLP/gte-large-en-v1.5/resolve/main/onnx/model.onnx
-wget https://huggingface.co/Alibaba-NLP/gte-large-en-v1.5/resolve/main/vocab.txt
-# Note: tokenizer.json is included in the repository
-
-# Set ONNX Runtime library path
-export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+# Set environment variables
+export GEMINI_API_KEY=your-gemini-api-key
+export API_KEY=your-secret-api-key  # optional
 
 # Run the server
 go run .
 ```
 
+## Differences from GPU Version (main branch)
+
+| Feature | Cloud (this branch) | GPU (main branch) |
+|---------|---------------------|-------------------|
+| Embedding | Gemini API | Local ONNX Runtime |
+| Docker image | ~50MB (Alpine) | ~5GB (CUDA) |
+| GPU required | No | Yes (or slow CPU fallback) |
+| Cost | Pay per Gemini API call | Free after setup |
+| Latency | Network dependent | Local inference |
+| Setup | Just API key | CUDA + model download |
+
 ---
 
 ## How Semantic Chunking Works
-
-This section provides a detailed explanation of the semantic chunking algorithm for readers interested in understanding how the chunking parameters affect output.
-
-#### Overview
 
 The semantic chunking algorithm converts raw text into ~500 token chunks optimized for retrieval augmented generation (RAG). The algorithm balances three competing objectives:
 1. **Semantic coherence**: Keep similar sentences together
 2. **Chunk size**: Stay close to optimal token count
 3. **Minimal fragmentation**: Avoid creating too many tiny chunks
 
-#### Preprocessing
+### Preprocessing
 
 Raw text is first segmented into sentences using standard delimiters (`.`, `?`, `!`).
 
-**Token Limit Enforcement**: To ensure compatibility with downstream models, we enforce a hard maximum token limit (`max_size`) on all segments. In rare cases where a single sentence exceeds `max_size`, we greedily split it into consecutive chunks, with the final chunk containing remaining tokens. These chunks may end mid-sentence, but this is acceptable for RAG applications. After this step, all sentences satisfy `TokenCount ≤ max_size`.
+**Token Limit Enforcement**: To ensure compatibility with downstream models, we enforce a hard maximum token limit (`max_size`) on all segments. In rare cases where a single sentence exceeds `max_size`, we greedily split it into consecutive chunks. After this step, all sentences satisfy `TokenCount <= max_size`.
 
-#### Problem Formulation
+### Dynamic Programming Algorithm
 
-Given a sequence of embedded sentences:
-```
-s0, s1, s2, ..., s{n-1}
-```
-
-The goal is to partition them into contiguous chunks such that:
-- Semantically coherent sentences are grouped together (cosine similarity)
-- Chunk sizes remain close to `optimal_size`
-- No chunk exceeds `max_size`
-- Excessive fragmentation is discouraged (`chunk_penalty`)
-
-We solve this segmentation problem via dynamic programming.
-
-#### Sentence Similarity Precomputation
-
-1. Each sentence is embedded exactly once using the ONNX model
-2. For each adjacent pair `(sᵢ, sᵢ₊₁)`, we compute cosine similarity:
-   ```
-   sim[i] = cos(embed(s_i), embed(s_{i+1}))
-   ```
-3. All similarities are **min-max normalized** to `[0, 1]` to ensure:
-   - Rewards are always non-negative
-   - There's always reward for merging sentences
-   - Higher similarity always increases merge desirability
-
-#### Optimization for O(1) Scoring
-
-To enable efficient DP transitions, we precompute two prefix arrays:
-
-**Prefix Similarity Array** (`prefix_sim`):
-```
-prefix_sim[k] = sim[0] + sim[1] + ... + sim[k-1]
-```
-This allows computing the total similarity within any segment `[i, j)` in O(1):
-```
-segment_similarity(i, j) = prefix_sim[j-1] - prefix_sim[i]
-```
-
-**Prefix Token Array** (`prefix_tokens`):
-```
-prefix_tokens[k] = tokens[0] + tokens[1] + ... + tokens[k-1]
-```
-This allows computing total tokens in segment `[i, j)` in O(1):
-```
-segment_tokens(i, j) = prefix_tokens[j] - prefix_tokens[i]
-```
-
-#### Dynamic Programming Algorithm
+Given a sequence of embedded sentences, we use dynamic programming to find the optimal partition:
 
 **DP Definition**:
 ```
 dp[j] = best achievable score when chunking sentences [0, j)
-dp[0] = 0  (zero sentences → score of 0)
+dp[0] = 0  (zero sentences -> score of 0)
 ```
 
 **Recurrence Relation**:
@@ -214,57 +190,23 @@ dp[j] = max{ i < j } (dp[i] + reward(i,j) - sizePenalty(i,j) - chunk_penalty)
 ```
 
 Where:
-- **`reward(i, j)`**: Sum of cosine similarities between adjacent sentences in `[i, j)` (always positive, favors semantic coherence)
-- **`sizePenalty(i, j)`**: Smooth penalty as token count approaches `max_size`, becomes infinite if exceeded
+- **`reward(i, j)`**: Sum of cosine similarities between adjacent sentences (favors semantic coherence)
+- **`sizePenalty(i, j)`**: Smooth penalty as token count approaches `max_size`
 - **`chunk_penalty`**: Constant penalty per chunk to discourage over-fragmentation
 
-**Legal Segments**: Only segments with total token count ≤ `max_size` are considered.
+### Size Penalty Function
 
-**Reconstruction**: A `start[]` array tracks the optimal starting index for each position, allowing backtracking from `dp[n]` to `dp[0]` to reconstruct the optimal chunking.
-
-#### Size Penalty Function
-
-The `sizePenalty` is a hinge-like function parameterized by:
-- **`optimal_size`**: No penalty below this threshold
-- **`max_size`**: Hard upper bound (infinite penalty if exceeded)
-- **`lambda_size`**: Maximum penalty applied at `max_size`
-
-**Formula**:
-```go
-if tokenCount <= optimal_size:.
+```
+if tokenCount <= optimal_size:
     penalty = 0
 else if tokenCount > max_size:
-    penalty = ∞ (illegal chunk)
+    penalty = infinity (illegal chunk)
 else:
     normalized = (tokenCount - optimal_size) / (max_size - optimal_size)
-    penalty = lambda_size × normalized
+    penalty = lambda_size * normalized
 ```
 
-This encourages chunks near `optimal_size` while allowing flexibility when semantic coherence warrants larger chunks.
-
-#### Reconstruction
-
-Once `dp[n]` is computed, we reconstruct the optimal segmentation by backtracking through `start[]` from `n` to `0`. Chunks are built in reverse order, then reversed to restore the original sequence.
-
-Each chunk aggregates:
-- Sentence text (concatenated)
-- Sentence embeddings
-- Total token count
-- Chunk index
-
-Finally, each chunk is embedded one final time to produce the chunk-level embedding returned in the response.
-
----
-
-#### Tuning Parameters for Your Use Case
-
-Small/No `chunk_penalty` encourages isolated chunks, phrases such as "Alright" and "Okay". This may be useful if you add a processing step afterwards to weed chunks smaller than 30 tokens.   
-
-For longer, coherent chunks, a large `optimal_size` and `max_size` may be desireable.
-
-For evenly distrbuted chunks of about the same token length, a large `chunk_penalty` would be helpful.
-
-If varying token lengths is acceptable and strong semantic integrity within chunks is a priority, then having `max_size` >> `optimal_size` and a light `lambda_size` allows for chunks to grow against the penalty as long as the sentences within them are very similar.
+### Tuning Parameters
 
 **For balanced RAG** (default):
 ```json
@@ -276,4 +218,9 @@ If varying token lengths is acceptable and strong semantic integrity within chun
 }
 ```
 
-Ultimately, the best way to find optimal parameters is to test on documents from your specific use case and visually validate the output.
+- Small `chunk_penalty`: Allows isolated short chunks
+- Large `optimal_size` + `max_size`: Longer, coherent chunks
+- Large `chunk_penalty`: More evenly distributed chunk sizes
+- `max_size` >> `optimal_size` with light `lambda_size`: Prioritizes semantic integrity
+
+The best way to find optimal parameters is to test on documents from your specific use case.
