@@ -40,7 +40,7 @@ All configuration is done via environment variables:
 | `GEMINI_API_KEY` | Yes | - | Your Gemini API key ([get one here](https://ai.google.dev/gemini-api/docs/api-key)) |
 | `API_KEY` | No | - | Secret key to protect your endpoint |
 | `GEMINI_MODEL` | No | `gemini-embedding-001` | Gemini embedding model to use |
-| `EMBEDDING_DIMENSIONS` | No | `768` | Output embedding dimensions (768, 1536, or 3072) |
+| `EMBEDDING_DIMENSIONS` | No | `1024` | Output embedding dimensions (768, 1536, or 3072) |
 | `PORT` | No | `8080` | Server port |
 | `READ_TIMEOUT_SECONDS` | No | `120` | HTTP read timeout |
 | `WRITE_TIMEOUT_SECONDS` | No | `120` | HTTP write timeout |

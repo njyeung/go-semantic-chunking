@@ -79,7 +79,7 @@ func LoadEmbeddingConfig() EmbeddingConfig {
 func DefaultEmbeddingConfig() EmbeddingConfig {
 	return EmbeddingConfig{
 		Model:                "gemini-embedding-001",
-		OutputDimensionality: 768, // Good balance of quality and size
+		OutputDimensionality: 1024,
 	}
 }
 
